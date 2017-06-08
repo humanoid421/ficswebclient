@@ -50,7 +50,8 @@ function INIT() {
 
     for (var i=0; i<moves.length; i++) {
         game.chess.move(moves[i]);
-        game.fens[i] = game.chess.fen();
+        //game.fens[i] = game.chess.fen();
+        game.fens[i] = game.chess.fen().split(' ')[0];
         //game.movetimes[i] = movetimes[i];
     }
     renderGame(game_num);
@@ -94,7 +95,8 @@ function APPEND_MOVE(s12) {
             game.board.move(board_moves[i]);
         }
         //game.movetimes[new_move_index] = ficsobj.s12.move_time;
-        game.fens[new_move_index] = game.chess.fen();
+        //game.fens[new_move_index] = game.chess.fen();
+        game.fens[new_move_index] = game.chess.fen().split(' ')[0];
         //game.s12 = ficsobj.s12;
         appendMove(game_num, ficsobj.s12.move_note_short, new_move_index);
     }
@@ -143,20 +145,32 @@ function renderPlayersDOM(game_num) {
 
 function renderMoveList(game_num, moves) {
     var move_number = 1;
+    var moves_div_id = '#moves_' + game_num;
+    
+    $(moves_div_id).empty();
 
-    $('#moves_' + game_num).empty();
+    var game = gamemap.get(game_num);
 
-    for (i=0; i < moves.length; i++) {
+
+    var range = [];
+    for (i=0; i < moves.length; i++) { range.push(i) }
+    
+    range.forEach( i => {
         if (i % 2 == 0) {
             var move_num_div = $('<div class="move_number">' + move_number.toString() + '</div>');
-            move_num_div.appendTo($('#moves_' + game_num));
+            move_num_div.appendTo($(moves_div_id));
         } else {
             move_number += 1;
         }
 
-        var move_div = $('<div class="move">' + moves[i] + '</div>');
-        move_div.appendTo($('#moves_' + game_num));
-    }
+        var move_div = $('<div class="move move_' + game_num + '">' + moves[i] + '</div>').on({click :function() { 
+            console.log(this);
+            game.board.position(game.fens[i],false);
+            $('.move_'+game_num).removeClass('highlight');
+            $(this).addClass('highlight');
+        }});
+        move_div.appendTo($(moves_div_id));
+    });
 }
 
 
