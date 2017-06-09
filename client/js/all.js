@@ -10,6 +10,7 @@ class Game {
         this.fens = [];
 
         this.s12 = s12;
+        this.last_move_highlighted = true;
     }
 }
 
@@ -55,7 +56,7 @@ function INIT() {
         //game.movetimes[i] = movetimes[i];
     }
     renderGame(game_num);
-    renderMoveList(game_num, moves);
+    renderMoveList(game_num);
 
 }
 
@@ -70,6 +71,7 @@ function APPEND_MOVE(s12) {
     
     var move_info = game.chess.move(s12.move_note_short);
     if (move_info) {
+        /*
         var board_moves = [];
         if (move_info.flags === 'k') {
             if (move_info.color === 'w') {
@@ -94,11 +96,11 @@ function APPEND_MOVE(s12) {
             console.log('board_move: ' + board_moves[i]);
             game.board.move(board_moves[i]);
         }
+        */
         //game.movetimes[new_move_index] = ficsobj.s12.move_time;
-        //game.fens[new_move_index] = game.chess.fen();
         game.fens[new_move_index] = game.chess.fen().split(' ')[0];
         //game.s12 = ficsobj.s12;
-        appendMove(game_num, ficsobj.s12.move_note_short, new_move_index);
+        appendMove(game_num, new_move_index);
     }
     console.log('game.chess.history().length :  ' + game.chess.history().length);
     console.log(game.chess.history());
@@ -143,6 +145,74 @@ function renderPlayersDOM(game_num) {
 }			
 
 
+
+
+
+
+
+
+
+
+function renderMoveList(game_num) {
+    $('#moves_' + game_num).empty();
+
+    var game = gamemap.get(game_num);
+    console.log(game);
+
+    var range = [];
+    for (i=0; i < game.chess.history().length; i++) { range.push(i) }
+    
+    range.forEach( i => {
+        appendMove(game_num, i);
+    });
+}
+
+
+function appendMove(game_num, i) {
+    console.log(game_num + ' --- ' + i);
+    var movelist_div = $('#moves_' + game_num);
+    var move_number = Math.floor(i/2) + 1;
+
+    var game = gamemap.get(game_num);
+
+    if (i % 2 == 0) {
+        var move_num_div = $('<div class="move_number">' + move_number.toString() + '</div>');
+        move_num_div.appendTo(movelist_div);
+    } else {
+        move_number += 1;
+    }
+
+    var move_div = $('<div class="move move_' + game_num + '">' + game.chess.history()[i] + '</div>').on({click :function() { 
+        console.log(this);
+        console.log('qweee');
+        game.board.position(game.fens[i],false);
+        $('.move_'+game_num).removeClass('highlight');
+        $(this).addClass('highlight');
+        if (i === game.chess.history().length - 1) { 
+            game.last_move_highlighted = true;
+        } else { 
+            game.last_move_highlighted = false;
+        }
+        console.log(game.last_move_highlighted)
+    }});
+    move_div.appendTo(movelist_div);
+    if (game.last_move_highlighted) {
+        $('.move_'+game_num).removeClass('highlight');
+        move_div.addClass('highlight');
+        game.board.position(game.fens[i]);
+        //game.board.move(san);
+    }
+}
+
+
+
+
+
+
+
+
+/*
+
 function renderMoveList(game_num, moves) {
     var move_number = 1;
     var moves_div_id = '#moves_' + game_num;
@@ -185,6 +255,7 @@ function appendMove(game_num, movestr, i) {
     var move_div = $('<div class="move">' + movestr + '</div>');
     move_div.appendTo($('#moves_' + game_num));
 }
+*/
 
 
 function renderGame(game_num) {
