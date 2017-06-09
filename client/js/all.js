@@ -11,6 +11,8 @@ class Game {
 
         this.s12 = s12;
         this.last_move_highlighted = true;
+        
+        this.current_move_index = -1;
     }
 }
 
@@ -145,14 +147,6 @@ function renderPlayersDOM(game_num) {
 }			
 
 
-
-
-
-
-
-
-
-
 function renderMoveList(game_num) {
     $('#moves_' + game_num).empty();
 
@@ -183,9 +177,8 @@ function appendMove(game_num, i) {
     }
 
     var move_div = $('<div class="move move_' + game_num + '">' + game.chess.history()[i] + '</div>').on({click :function() { 
-        console.log(this);
-        console.log('qweee');
         game.board.position(game.fens[i],false);
+        game.current_move_index = i;
         $('.move_'+game_num).removeClass('highlight');
         $(this).addClass('highlight');
         if (i === game.chess.history().length - 1) { 
@@ -193,69 +186,15 @@ function appendMove(game_num, i) {
         } else { 
             game.last_move_highlighted = false;
         }
-        console.log(game.last_move_highlighted)
     }});
     move_div.appendTo(movelist_div);
     if (game.last_move_highlighted) {
         $('.move_'+game_num).removeClass('highlight');
         move_div.addClass('highlight');
         game.board.position(game.fens[i]);
-        //game.board.move(san);
+        game.current_move_index = i;
     }
 }
-
-
-
-
-
-
-
-
-/*
-
-function renderMoveList(game_num, moves) {
-    var move_number = 1;
-    var moves_div_id = '#moves_' + game_num;
-    
-    $(moves_div_id).empty();
-
-    var game = gamemap.get(game_num);
-
-
-    var range = [];
-    for (i=0; i < moves.length; i++) { range.push(i) }
-    
-    range.forEach( i => {
-        if (i % 2 == 0) {
-            var move_num_div = $('<div class="move_number">' + move_number.toString() + '</div>');
-            move_num_div.appendTo($(moves_div_id));
-        } else {
-            move_number += 1;
-        }
-
-        var move_div = $('<div class="move move_' + game_num + '">' + moves[i] + '</div>').on({click :function() { 
-            console.log(this);
-            game.board.position(game.fens[i],false);
-            $('.move_'+game_num).removeClass('highlight');
-            $(this).addClass('highlight');
-        }});
-        move_div.appendTo($(moves_div_id));
-    });
-}
-
-
-function appendMove(game_num, movestr, i) {
-    move_number = Math.floor(i/2) + 1;
-
-    if (i % 2 == 0) {
-        var move_num_div = $('<div class="move_number">' + move_number.toString() + '</div>');
-        move_num_div.appendTo($('#moves_' + game_num));
-    }
-
-    var move_div = $('<div class="move">' + movestr + '</div>');
-    move_div.appendTo($('#moves_' + game_num));
-}
-*/
 
 
 function renderGame(game_num) {
@@ -309,4 +248,40 @@ function renderGame(game_num) {
 
 $(document).ready(function(){
     INIT();
+    var arrows_game_num = '';
+    $(document).on('click', function(e) { 
+        var observe_div = $(e.target).closest('[id^=observe_]');
+        if (observe_div[0]) {
+            arrows_game_num = observe_div.attr('id').split('_')[1];
+        } else {
+            arrows_game_num = '';
+        }
+        console.log(arrows_game_num);
+    });
+    $(document).on('keydown', function(e) {
+        if (!arrows_game_num) return;
+        /*
+        Up: 38
+        Down: 40
+        Right: 39
+        Left: 37
+        */
+
+        if ( $.inArray(e.which, [37,38,39,40]) == -1 ) return;
+        
+        var game = gamemap.get(arrows_game_num);
+        if (!game) return;
+
+        if (e.which == 37) {
+            console.log('left');
+        } else if (e.which == 39) {
+            console.log('right');
+        } else if (e.which == 38) {
+            e.preventDefault();           
+            console.log('up');
+        } else if (e.which == 40) {
+            console.log('down');
+        }
+    });
+
 });
