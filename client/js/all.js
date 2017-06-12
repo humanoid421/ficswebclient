@@ -10,7 +10,6 @@ class Game {
         this.fens = [];
 
         this.s12 = s12;
-        this.last_move_highlighted = true;
         
         this.current_move_index = -1;
     }
@@ -55,6 +54,9 @@ function INIT() {
             game.fens[i] = game.chess.fen().split(' ')[0];
             //game.movetimes[i] = movetimes[i];
         }
+
+        game.current_move_index = game.chess.history().length - 1;
+
         renderGame(game_num);
         renderMoveList(game_num);
     });
@@ -63,7 +65,7 @@ function INIT() {
 
 function APPEND_MOVE(s12) {
     var ficsobj = { s12: s12 };
-    let game_num = '43';
+    let game_num = ficsobj.s12.game_num;;
     let game = gamemap.get(game_num);
 
     var new_move_index = game.chess.history().length;
@@ -73,7 +75,10 @@ function APPEND_MOVE(s12) {
         //game.movetimes[new_move_index] = ficsobj.s12.move_time;
         game.fens[new_move_index] = game.chess.fen().split(' ')[0];
         //game.s12 = ficsobj.s12;
-        appendMove(game_num, new_move_index);
+        appendToMoveList(game_num, new_move_index);
+        if (game.current_move_index == new_move_index - 1) {
+            goToMove(game_num, new_move_index, curmove=true);
+        }
     }
 
     renderPlayersDOM(game_num);
@@ -121,12 +126,14 @@ function renderMoveList(game_num) {
     for (i=0; i < game.chess.history().length; i++) { range.push(i) }
     
     range.forEach( i => {
-        appendMove(game_num, i);
+        appendToMoveList(game_num, i);
     });
+
+    goToMove( game_num, game.chess.history().length-1 );
 }
 
 
-function appendMove(game_num, i) {
+function appendToMoveList(game_num, i, curmove = false) {
     var movelist_div = $('#moves_' + game_num);
     var move_number = Math.floor(i/2) + 1;
 
@@ -146,26 +153,18 @@ function appendMove(game_num, i) {
     }});
 
     move_div.appendTo(movelist_div);
-    if (game.last_move_highlighted) {
-        $('.move_'+game_num).removeClass('highlight');
-        move_div.addClass('highlight');
-        game.board.position(game.fens[i],false);
-        game.current_move_index = i;
+    if (curmove) { 
+        goToMove(game_num, i, animate=true);
     }
 }
 
-function goToMove(game_num, i) {
+function goToMove(game_num, i, animate=false) {
     var game = gamemap.get(game_num);
-    game.board.position(game.fens[i],false);
+    game.board.position(game.fens[i], animate);
     game.current_move_index = i;
     $('.move_'+game_num).removeClass('highlight');
     var move_div = $('#move_' + game_num + '_' + i);
     move_div.addClass('highlight');
-    if (i === game.chess.history().length - 1) { 
-        game.last_move_highlighted = true;
-    } else { 
-        game.last_move_highlighted = false;
-    }
 }
 
 function renderGame(game_num) {
@@ -213,37 +212,22 @@ function renderGame(game_num) {
     game.board = new ChessBoard('board_' + game_num, {
         position: game.chess.fen(),
         onDrop : function(source, target, piece, newPos, oldPos, orientation) {
-            var mresult = game.chess.move({ from: source, to: target });
-            console.log(mresult);
-            if (!mresult) {
-                console.log(this);
+            var valid_move = game.chess.move({ from: source, to: target });
+            if (!valid_move) {
                 return 'snapback';
             }
             game.fens[game.chess.history().length - 1] = game.chess.fen().split(' ')[0];
-            appendMove(game_num, game.chess.history().length-1);
-            //game.current_move_index = game.chess.history().length - 1;
-            //{ color: 'b', from: 'g8', to: 'e7', flags: 'n', piece: 'n', san: 'Ne7' }
-            arrows_game_num = game_num;
-            console.log("Source: " + source);
-            console.log("Target: " + target);
-            console.log("Piece: " + piece);
-            console.log("New position: " + ChessBoard.objToFen(newPos));
-            console.log("Old position: " + ChessBoard.objToFen(oldPos));
-            console.log("Orientation: " + orientation);
-            console.log("--------------------");
-            console.log('qwqweqweqweqweqwe' + game.game_num + arrows_game_num);
+            appendToMoveList(game_num, game.chess.history().length-1);
+            goToMove(game_num, game.current_move_index + 1);
+            focus_game_num = game_num;
         },
         draggable:true
     });
-    console.log(game.board.draggable);
-    game.board.draggable = false;
-    console.log(game.board.draggable);
 }
 
 
 
-
-var arrows_game_num = '';
+var focus_game_num = '';
 
 $(document).ready(function(){
     INIT();
@@ -251,35 +235,35 @@ $(document).ready(function(){
     $(document).on('click', function(e) { 
         var observe_div = $(e.target).closest('[id^=observe_]');
         if (observe_div[0]) {
-            arrows_game_num = observe_div.attr('id').split('_')[1];
+            focus_game_num = observe_div.attr('id').split('_')[1];
         } else {
-            arrows_game_num = '';
+            focus_game_num = '';
         }
     });
     
     $(document).on('keydown', function(e) {
-        console.log(arrows_game_num + ' is arrows_game_num');
-        if (!arrows_game_num) return;
+        console.log(focus_game_num + ' is focus_game_num');
+        if (!focus_game_num) return;
 
         if ( $.inArray(e.which, [37,38,39,40]) == -1 ) return;
 
         e.preventDefault();           
         
-        var game = gamemap.get(arrows_game_num);
+        var game = gamemap.get(focus_game_num);
         if (!game) return;
 
         if (e.which == 37) {            // left
             if (game.current_move_index > 0) {
-                goToMove(arrows_game_num, game.current_move_index - 1);
+                goToMove(focus_game_num, game.current_move_index - 1);
             }
         } else if (e.which == 39) {     //right
             if (game.current_move_index < game.chess.history().length - 1) {
-                goToMove(arrows_game_num, game.current_move_index + 1);
+                goToMove(focus_game_num, game.current_move_index + 1);
             }
         } else if (e.which == 38) {     //up
-            goToMove(arrows_game_num, 0);
+            goToMove(focus_game_num, 0);
         } else if (e.which == 40) {     //down
-            goToMove(arrows_game_num, game.chess.history().length - 1);
+            goToMove(focus_game_num, game.chess.history().length - 1);
         }
     });
 
