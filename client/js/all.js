@@ -3,6 +3,8 @@ class Game {
         this.chess = new Chess();
         this.chess.header('White', s12.w_name, 'Black', s12.b_name, 'TimeControl', s12.dur + '+' + s12.inc);
 
+        this.startfen = this.chess.fen().split(' ')[0];
+
         this.top_is_black = true;
         this.game_num = s12.game_num;
 
@@ -77,7 +79,7 @@ function APPEND_MOVE(s12) {
         //game.s12 = ficsobj.s12;
         appendToMoveList(game_num, new_move_index);
         if (game.current_move_index == new_move_index - 1) {
-            goToMove(game_num, new_move_index, curmove=true);
+            goToMove(game_num, new_move_index, animate=true);
         }
     }
 
@@ -133,7 +135,7 @@ function renderMoveList(game_num) {
 }
 
 
-function appendToMoveList(game_num, i, curmove = false) {
+function appendToMoveList(game_num, i, goto_move = false, animate=false) {
     var movelist_div = $('#moves_' + game_num);
     var move_number = Math.floor(i/2) + 1;
 
@@ -153,18 +155,24 @@ function appendToMoveList(game_num, i, curmove = false) {
     }});
 
     move_div.appendTo(movelist_div);
-    if (curmove) { 
-        goToMove(game_num, i, animate=true);
+    if (goto_move) { 
+        goToMove(game_num, i, animate=animate);
     }
 }
 
 function goToMove(game_num, i, animate=false) {
     var game = gamemap.get(game_num);
-    game.board.position(game.fens[i], animate);
-    game.current_move_index = i;
     $('.move_'+game_num).removeClass('highlight');
-    var move_div = $('#move_' + game_num + '_' + i);
-    move_div.addClass('highlight');
+    game.current_move_index = i;
+    if (i == -1) {
+        game.board.position(game.startfen, animate);
+    } else {
+        game.board.position(game.fens[i], animate);
+        $('#move_' + game_num + '_' + i).addClass('highlight');;
+    }
+    if (i == game.chess.history().length -1) {
+        $('#moves_'+game_num).scrollTop($('#moves_'+focus_game_num).prop('scrollHeight'));
+    }
 }
 
 function renderGame(game_num) {
@@ -217,8 +225,7 @@ function renderGame(game_num) {
                 return 'snapback';
             }
             game.fens[game.chess.history().length - 1] = game.chess.fen().split(' ')[0];
-            appendToMoveList(game_num, game.chess.history().length-1);
-            goToMove(game_num, game.current_move_index + 1);
+            appendToMoveList(game_num, game.chess.history().length-1, goto_move=true);
             focus_game_num = game_num;
         },
         draggable:true
@@ -232,7 +239,7 @@ var focus_game_num = '';
 $(document).ready(function(){
     INIT();
 
-    $(document).on('click', function(e) { 
+    $(document).on('mousedown', function(e) { 
         var observe_div = $(e.target).closest('[id^=observe_]');
         if (observe_div[0]) {
             focus_game_num = observe_div.attr('id').split('_')[1];
@@ -242,7 +249,6 @@ $(document).ready(function(){
     });
     
     $(document).on('keydown', function(e) {
-        console.log(focus_game_num + ' is focus_game_num');
         if (!focus_game_num) return;
 
         if ( $.inArray(e.which, [37,38,39,40]) == -1 ) return;
@@ -253,16 +259,24 @@ $(document).ready(function(){
         if (!game) return;
 
         if (e.which == 37) {            // left
-            if (game.current_move_index > 0) {
+            if (game.current_move_index > -1) {
+                $('#moves_'+focus_game_num).scrollTop($('#move_'+focus_game_num+'_0').height() * Math.floor((game.current_move_index -1) / 2) - 75);
                 goToMove(focus_game_num, game.current_move_index - 1);
+            } else {
+                $('#moves_'+focus_game_num).scrollTop(0);
             }
         } else if (e.which == 39) {     //right
             if (game.current_move_index < game.chess.history().length - 1) {
+                $('#moves_'+focus_game_num).scrollTop($('#move_'+focus_game_num+'_0').height() * Math.floor((game.current_move_index -1) / 2) - 75);
                 goToMove(focus_game_num, game.current_move_index + 1);
+            } else {
+                $('#moves_'+focus_game_num).scrollTop($('#moves_'+focus_game_num).prop('scrollHeight'));
             }
         } else if (e.which == 38) {     //up
-            goToMove(focus_game_num, 0);
+            $('#moves_'+focus_game_num).scrollTop(0);
+            goToMove(focus_game_num, -1);
         } else if (e.which == 40) {     //down
+            $('#moves_'+focus_game_num).scrollTop($('#moves_'+focus_game_num).prop('scrollHeight'));
             goToMove(focus_game_num, game.chess.history().length - 1);
         }
     });
