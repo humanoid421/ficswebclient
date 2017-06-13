@@ -14,6 +14,7 @@ class Game {
         this.s12 = s12;
         
         this.current_move_index = -1;
+        this.clocks = {w:null, b:null};
     }
 }
 
@@ -44,6 +45,7 @@ var gamemap = new Map();
 
 
 function INIT() {
+    //['43'].forEach(game_num => {
     ['43','66'].forEach(game_num => {
         gamemap.set(game_num, new Game(INIT_S12.get(game_num)));
 
@@ -83,7 +85,8 @@ function APPEND_MOVE(s12) {
         }
     }
 
-    renderPlayersDOM(game_num);
+    runClock(game_num);
+    //renderPlayersDOM(game_num);
 }
 
 // #############################################################################
@@ -103,6 +106,37 @@ function toMinutes(seconds) {
 	return minutes + ':' + remaining_seconds
 }
 
+function runClock(game_num) {
+    var game = gamemap.get(game_num);
+    var whose_move = ['w','b'][game.chess.history().length % 2];
+    var not_whose_move = ['b','w'][game.chess.history().length % 2];
+    //console.log(game_num + 'whose_move is ' + whose_move);
+    //console.log(game_num + 'not_whose_move is ' + not_whose_move);
+    clearInterval(game.clocks[not_whose_move]);
+    game.clocks[whose_move] = setInterval( function() {
+        //if (game.clocks[not_whose_move]) {
+        //    game.clocks[not_whose_move] = null;
+        //}
+        //console.log('top_is_black ' + game.top_is_black);
+        if ( (game.top_is_black && whose_move === 'b') || (!game.top_is_black && whose_move === 'w') ) {
+            //console.log(game_num + 'qwe');
+            $('#top_time_' + game_num).html(toMinutes(game.s12[whose_move+'_clock']));
+        } else {
+            //console.log(game_num + 'qwe2');
+            $('#bottom_time_' + game_num).html(toMinutes(game.s12[whose_move+'_clock']));
+        }
+        game.s12[whose_move+'_clock'] -= 1;
+    }, 1000);
+}
+
+
+
+
+
+
+
+
+
 function renderPlayersDOM(game_num) {
 	var game = gamemap.get(game_num);
     if (game.top_is_black) {
@@ -116,6 +150,7 @@ function renderPlayersDOM(game_num) {
         $('#bottom_player_' + game_num).html(game.chess.header().Black);
         $('#bottom_time_' + game_num).html(toMinutes(game.s12.b_clock));
     }
+    runClock(game_num);
 }			
 
 
@@ -227,6 +262,7 @@ function renderGame(game_num) {
             game.fens[game.chess.history().length - 1] = game.chess.fen().split(' ')[0];
             appendToMoveList(game_num, game.chess.history().length-1, goto_move=true);
             focus_game_num = game_num;
+            runClock(game_num);
         },
         draggable:true
     });
