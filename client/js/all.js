@@ -72,16 +72,21 @@ function APPEND_MOVE(s12) {
     let game_num = ficsobj.s12.game_num;;
     let game = gamemap.get(game_num);
 
-    var new_move_index = game.chess.history().length;
     
-    var move_info = game.chess.move(s12.move_note_short, {sloppy:true});
-    if (move_info) {
-        //game.movetimes[new_move_index] = ficsobj.s12.move_time;
-        game.fens[new_move_index] = game.chess.fen().split(' ')[0];
-        //game.s12 = ficsobj.s12;
-        appendToMoveList(game_num, new_move_index);
-        if (game.current_move_index == new_move_index - 1) {
-            goToMove(game_num, new_move_index, animate=true);
+    if ( 0 ) {
+        console.log('qwe');
+    } else {
+        var new_move_index = game.chess.history().length;
+        
+        var move_info = game.chess.move(s12.move_note_short, {sloppy:true});
+        if (move_info) {
+            //game.movetimes[new_move_index] = ficsobj.s12.move_time;
+            game.fens[new_move_index] = game.chess.fen().split(' ')[0];
+            //game.s12 = ficsobj.s12;
+            appendToMoveList(game_num, new_move_index);
+            if (game.current_move_index == new_move_index - 1) {
+                goToMove(game_num, new_move_index, animate=true);
+            }
         }
     }
 
@@ -106,35 +111,21 @@ function toMinutes(seconds) {
 	return minutes + ':' + remaining_seconds
 }
 
+
 function runClock(game_num) {
     var game = gamemap.get(game_num);
     var whose_move = ['w','b'][game.chess.history().length % 2];
     var not_whose_move = ['b','w'][game.chess.history().length % 2];
-    //console.log(game_num + 'whose_move is ' + whose_move);
-    //console.log(game_num + 'not_whose_move is ' + not_whose_move);
     clearInterval(game.clocks[not_whose_move]);
     game.clocks[whose_move] = setInterval( function() {
-        //if (game.clocks[not_whose_move]) {
-        //    game.clocks[not_whose_move] = null;
-        //}
-        //console.log('top_is_black ' + game.top_is_black);
         if ( (game.top_is_black && whose_move === 'b') || (!game.top_is_black && whose_move === 'w') ) {
-            //console.log(game_num + 'qwe');
             $('#top_time_' + game_num).html(toMinutes(game.s12[whose_move+'_clock']));
         } else {
-            //console.log(game_num + 'qwe2');
             $('#bottom_time_' + game_num).html(toMinutes(game.s12[whose_move+'_clock']));
         }
         game.s12[whose_move+'_clock'] -= 1;
     }, 1000);
 }
-
-
-
-
-
-
-
 
 
 function renderPlayersDOM(game_num) {
@@ -195,6 +186,7 @@ function appendToMoveList(game_num, i, goto_move = false, animate=false) {
     }
 }
 
+
 function goToMove(game_num, i, animate=false) {
     var game = gamemap.get(game_num);
     $('.move_'+game_num).removeClass('highlight');
@@ -209,6 +201,7 @@ function goToMove(game_num, i, animate=false) {
         $('#moves_'+game_num).scrollTop($('#moves_'+focus_game_num).prop('scrollHeight'));
     }
 }
+
 
 function renderGame(game_num) {
     var game = gamemap.get(game_num);
